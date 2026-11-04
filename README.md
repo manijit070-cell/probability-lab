@@ -4,6 +4,10 @@
 
 **B.Tech Probability and Statistics Mini-Project — Group 7**
 
+🌐 **Live Production Web App:** [https://probability-lab-seven.vercel.app](https://probability-lab-seven.vercel.app)  
+📦 **GitHub Repository:** [https://github.com/manijit070-cell/probability-lab](https://github.com/manijit070-cell/probability-lab)  
+🐍 **Python Health Endpoint:** [https://probability-lab-seven.vercel.app/api/health](https://probability-lab-seven.vercel.app/api/health)
+
 ---
 
 ## 1. Project Title & Abstract
