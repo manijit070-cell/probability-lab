@@ -8,7 +8,6 @@ import { CoinLab } from './pages/CoinLab';
 import { DiceLab } from './pages/DiceLab';
 import { CardLab } from './pages/CardLab';
 import { StatisticsLab } from './pages/StatisticsLab';
-import { About } from './pages/About';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -37,7 +36,6 @@ export function App() {
             {activeTab === 'dice' && <DiceLab />}
             {activeTab === 'cards' && <CardLab />}
             {activeTab === 'statistics' && <StatisticsLab />}
-            {activeTab === 'about' && <About />}
           </motion.div>
         </AnimatePresence>
       </main>

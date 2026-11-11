@@ -152,4 +152,4 @@ export interface LLNAnalysisResponse {
 }
 
 // ---------------- Navigation ----------------
-export type TabType = 'home' | 'coin' | 'dice' | 'cards' | 'statistics' | 'about';
+export type TabType = 'home' | 'coin' | 'dice' | 'cards' | 'statistics';

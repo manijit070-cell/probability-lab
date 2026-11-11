@@ -7,7 +7,6 @@ import {
   Dice5,
   Layers,
   BarChart3,
-  BookOpen,
   Home,
   CheckCircle2,
   XCircle,
@@ -51,7 +50,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
     { id: 'dice', label: 'Dice Lab', shortLabel: 'Dice', icon: Dice5 },
     { id: 'cards', label: 'Card Lab', shortLabel: 'Cards', icon: Layers },
     { id: 'statistics', label: 'LLN Stats', shortLabel: 'Stats', icon: BarChart3 },
-    { id: 'about', label: 'Specs', shortLabel: 'Specs', icon: BookOpen },
   ];
 
   return (
