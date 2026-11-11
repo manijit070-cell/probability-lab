@@ -5,6 +5,7 @@ import { CardVisual } from '../components/CardVisual';
 import { StatCard } from '../components/StatCard';
 import { ConvergenceChart } from '../components/ConvergenceChart';
 import { MathExplainer } from '../components/MathExplainer';
+import { soundEngine } from '../utils/sound';
 import {
   Layers,
   Play,
@@ -12,7 +13,8 @@ import {
   BarChart3,
   AlertCircle,
   HelpCircle,
-  RefreshCw
+  RefreshCw,
+  RotateCcw
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -44,16 +46,21 @@ export const CardLab: React.FC = () => {
 
   const trialPresets = [10, 100, 1000, 10000, 100000];
 
-  const runSimulation = async () => {
+  const runSimulation = async (userInitiated = true) => {
     setLoading(true);
     setIsDealing(true);
     setError(null);
+
+    const effectiveCount = experimentType === 'two_aces' ? 2 : cardsDrawn;
+    if (userInitiated) {
+      soundEngine.playCardDeal(effectiveCount);
+    }
 
     try {
       const parsedSeed = seed.trim() !== '' ? parseInt(seed.trim(), 10) : undefined;
       const res = await probabilityApi.simulateCards({
         num_trials: numTrials,
-        cards_drawn: experimentType === 'two_aces' ? 2 : cardsDrawn,
+        cards_drawn: effectiveCount,
         replacement: replacement,
         experiment_type: experimentType,
         target_suit: targetSuit,
@@ -71,13 +78,26 @@ export const CardLab: React.FC = () => {
       setTimeout(() => {
         setIsDealing(false);
         setLoading(false);
-      }, 700);
+        if (userInitiated) {
+          soundEngine.playSuccess();
+        }
+      }, 650);
     }
   };
 
   useEffect(() => {
-    runSimulation();
+    runSimulation(false);
   }, []);
+
+  const handleReset = () => {
+    soundEngine.playReset();
+    setNumTrials(1000);
+    setCardsDrawn(1);
+    setReplacement(false);
+    setExperimentType('draw_ace');
+    setTargetSuit('hearts');
+    setSeed('');
+  };
 
   // Format suit distribution for Recharts
   const suitChartData = result
@@ -90,15 +110,15 @@ export const CardLab: React.FC = () => {
     : [];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 sm:space-y-10">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-white/10 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 sm:pb-6 border-b border-white/10 gap-3 sm:gap-4">
         <div>
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center shrink-0">
               <Layers className="w-4 h-4" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">
               Playing Card Experiment Laboratory
             </h1>
           </div>
@@ -108,9 +128,9 @@ export const CardLab: React.FC = () => {
         </div>
 
         <button
-          onClick={runSimulation}
+          onClick={() => runSimulation(true)}
           disabled={loading}
-          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold text-xs uppercase tracking-wider font-mono shadow-[0_0_20px_-3px_rgba(6,182,212,0.5)] transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+          className="hidden lg:flex px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold text-xs uppercase tracking-wider font-mono shadow-[0_0_20px_-3px_rgba(6,182,212,0.5)] transition-all items-center justify-center space-x-2 disabled:opacity-50 active:scale-95"
         >
           <Play className="w-4 h-4 fill-current" />
           <span>{loading ? 'Dealing in Python...' : 'Deal Cards'}</span>
@@ -124,16 +144,27 @@ export const CardLab: React.FC = () => {
         </div>
       )}
 
-      {/* Main Grid: Controls + Visuals */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Controls */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="glass-panel p-6 rounded-2xl border border-white/10 space-y-5">
-            <div className="flex items-center space-x-2 border-b border-white/5 pb-3">
-              <Sliders className="w-4 h-4 text-cyan-400" />
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-200 font-mono">
-                Card Deck Configuration
-              </h2>
+      {/* Main Grid: Controls + Visuals (Visual Stage first on mobile) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
+        {/* Left Column on Desktop / Second on Mobile: Controls */}
+        <div className="lg:col-span-5 order-2 lg:order-1 space-y-6">
+          <div className="glass-panel p-4 sm:p-6 rounded-2xl border border-white/10 space-y-5">
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <div className="flex items-center space-x-2">
+                <Sliders className="w-4 h-4 text-cyan-400" />
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-200 font-mono">
+                  Card Deck Configuration
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="text-[11px] font-mono text-slate-400 hover:text-cyan-300 flex items-center space-x-1 transition-colors"
+                title="Reset parameters"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset</span>
+              </button>
             </div>
 
             {/* Replacement Toggle (Hypergeometric vs Binomial) */}
@@ -147,19 +178,25 @@ export const CardLab: React.FC = () => {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => setReplacement(false)}
-                  className={`py-2 px-3 rounded-xl text-xs font-mono transition-all border ${
+                  onClick={() => {
+                    soundEngine.playToggle(false);
+                    setReplacement(false);
+                  }}
+                  className={`py-2 px-2.5 sm:px-3 rounded-xl text-[11px] sm:text-xs font-mono transition-all border active:scale-95 ${
                     !replacement
                       ? 'bg-emerald-500/20 text-emerald-300 font-bold border-emerald-500/40 shadow-sm'
                       : 'bg-midnight-900 text-slate-400 hover:text-white border-white/5'
                   }`}
                 >
-                  Without (Hypergeometric)
+                  Without (Hypergeom)
                 </button>
                 <button
                   type="button"
-                  onClick={() => setReplacement(true)}
-                  className={`py-2 px-3 rounded-xl text-xs font-mono transition-all border ${
+                  onClick={() => {
+                    soundEngine.playToggle(true);
+                    setReplacement(true);
+                  }}
+                  className={`py-2 px-2.5 sm:px-3 rounded-xl text-[11px] sm:text-xs font-mono transition-all border active:scale-95 ${
                     replacement
                       ? 'bg-blue-500/20 text-blue-300 font-bold border-blue-500/40 shadow-sm'
                       : 'bg-midnight-900 text-slate-400 hover:text-white border-white/5'
@@ -178,6 +215,7 @@ export const CardLab: React.FC = () => {
               <select
                 value={experimentType}
                 onChange={(e) => {
+                  soundEngine.playClick();
                   const val = e.target.value;
                   setExperimentType(val);
                   if (val === 'two_aces') {
@@ -204,7 +242,7 @@ export const CardLab: React.FC = () => {
                 <label className="text-xs font-mono text-slate-400 uppercase tracking-wide">
                   Target Suit
                 </label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
                     { id: 'hearts', label: 'Hearts ♥', color: 'text-red-400' },
                     { id: 'diamonds', label: 'Diamonds ♦', color: 'text-red-400' },
@@ -214,8 +252,11 @@ export const CardLab: React.FC = () => {
                     <button
                       key={s.id}
                       type="button"
-                      onClick={() => setTargetSuit(s.id)}
-                      className={`py-1.5 rounded-lg text-xs font-mono border ${
+                      onClick={() => {
+                        soundEngine.playClick(2);
+                        setTargetSuit(s.id);
+                      }}
+                      className={`py-2 rounded-lg text-xs font-mono border active:scale-95 ${
                         targetSuit === s.id
                           ? 'bg-cyan-600/30 text-white font-bold border-cyan-400'
                           : 'bg-midnight-900 text-slate-400 hover:text-white border-white/5'
@@ -240,8 +281,11 @@ export const CardLab: React.FC = () => {
                   min={1}
                   max={5}
                   value={cardsDrawn}
-                  onChange={(e) => setCardsDrawn(parseInt(e.target.value, 10))}
-                  className="w-full accent-cyan-500"
+                  onChange={(e) => {
+                    soundEngine.playTick();
+                    setCardsDrawn(parseInt(e.target.value, 10));
+                  }}
+                  className="w-full accent-cyan-500 text-cyan-400 bg-midnight-900"
                 />
               </div>
             )}
@@ -252,13 +296,16 @@ export const CardLab: React.FC = () => {
                 <span>Number of Trials (N)</span>
                 <span className="text-cyan-400 font-bold">{numTrials.toLocaleString()}</span>
               </label>
-              <div className="grid grid-cols-5 gap-1.5">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
                 {trialPresets.map((preset) => (
                   <button
                     key={preset}
                     type="button"
-                    onClick={() => setNumTrials(preset)}
-                    className={`py-1.5 rounded-lg text-xs font-mono transition-all border ${
+                    onClick={() => {
+                      soundEngine.playClick(1);
+                      setNumTrials(preset);
+                    }}
+                    className={`py-2 rounded-lg text-xs font-mono transition-all border active:scale-95 ${
                       numTrials === preset
                         ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-sm'
                         : 'bg-midnight-900 text-slate-400 hover:text-white border-white/5'
@@ -297,19 +344,60 @@ export const CardLab: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Visual Stage */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="glass-panel rounded-2xl border border-white/10 p-6 flex flex-col items-center justify-center relative overflow-hidden">
+        {/* Right Column on Desktop / First on Mobile: Visual Stage + Integrated Deal Action Bar */}
+        <div className="lg:col-span-7 order-1 lg:order-2 space-y-4 sm:space-y-6">
+          <div className="glass-stage rounded-2xl border border-white/10 p-4 sm:p-6 flex flex-col items-center justify-center relative overflow-hidden">
+            <div className="w-full flex items-center justify-between text-[11px] font-mono text-slate-400 mb-1">
+              <span className="uppercase tracking-wider text-cyan-300/90">
+                {experimentType.replace(/_/g, ' ')}
+              </span>
+              <span>N = {numTrials.toLocaleString()}</span>
+            </div>
+
             <CardVisual
               cards={sampleHand}
               isDealing={isDealing}
               replacement={replacement}
+              onStageClick={() => runSimulation(true)}
             />
+
+            {/* Integrated Action Bar directly beneath Cards */}
+            <div className="w-full pt-3 mt-2 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+              <div className="flex items-center justify-center sm:justify-start gap-1.5 overflow-x-auto no-scrollbar">
+                {[100, 1000, 10000, 100000].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => {
+                      soundEngine.playClick(1);
+                      setNumTrials(preset);
+                    }}
+                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-mono transition-all border active:scale-95 shrink-0 ${
+                      numTrials === preset
+                        ? 'bg-cyan-500/20 text-cyan-300 font-bold border-cyan-400/50'
+                        : 'bg-midnight-900/80 text-slate-400 hover:text-white border-white/5'
+                    }`}
+                  >
+                    {preset >= 1000 ? `${preset / 1000}k` : preset}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => runSimulation(true)}
+                disabled={loading}
+                className="px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold text-xs uppercase tracking-wider font-mono shadow-[0_0_22px_-3px_rgba(6,182,212,0.55)] transition-all flex items-center justify-center space-x-2 disabled:opacity-50 active:scale-[0.98]"
+              >
+                <Play className="w-4 h-4 fill-current" />
+                <span>{loading ? 'Dealing in Python...' : 'Deal Cards & Simulate'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Metric Cards */}
           {result && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
               <StatCard
                 label="Experimental P"
                 value={(result.experimental_probability * 100).toFixed(2) + '%'}
@@ -412,3 +500,4 @@ export const CardLab: React.FC = () => {
     </div>
   );
 };
+

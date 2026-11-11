@@ -26,3 +26,7 @@ htmlcov/
 *.sw?
 .vscode/
 .idea/
+
+.vercel
+.vercel_python_packages/
+

@@ -61,7 +61,7 @@ export const About: React.FC = () => {
             The primary objective of this project is to build an educational full-stack computational laboratory titled{' '}
             <strong className="text-white">PROBABILITYLAB</strong> that simulates classical stochastic experiments
             (Coins, Dice, and Cards) using a verified Python backend and contrasts theoretical expectations against
-            experimental observations as trial counts increase ($N \to 1,000,000$).
+            experimental observations as trial counts increase (<code className="font-mono text-cyan-300">N → 1,000,000</code>).
           </p>
         </div>
       </div>
@@ -162,8 +162,9 @@ export const About: React.FC = () => {
           <div className="p-4 rounded-xl bg-midnight-900 border border-white/5 space-y-2">
             <div className="font-bold text-amber-300 font-mono">Step 3: Demonstrate Hypergeometric vs. Binomial Sampling</div>
             <p>
-              Navigate to the Card Lab. Select "Two Aces". Toggle between "Without Replacement" (Hypergeometric:
-              $P = 1/221 \approx 0.004525$) and "With Replacement" (Independent: $P = 1/169 \approx 0.005917$). Point out
+              Navigate to the Card Lab. Select "Two Aces". Toggle between "Without Replacement" (Hypergeometric:{' '}
+              <code className="font-mono text-emerald-300">P = 1/221 ≈ 0.004525</code>) and "With Replacement" (Independent:{' '}
+              <code className="font-mono text-blue-300">P = 1/169 ≈ 0.005917</code>). Point out
               to your professor how sampling without replacement strictly lowers the likelihood of identical ranks.
             </p>
           </div>

@@ -70,6 +70,20 @@ const renderPips = (val: number, pipColor: string) => {
 };
 
 export const SingleDie: React.FC<SingleDieProps> = ({ value, isRolling, color = 'violet' }) => {
+  const spinTurnsRef = React.useRef(0);
+  const wasRollingRef = React.useRef(false);
+  const [rot, setRot] = React.useState(0);
+
+  React.useEffect(() => {
+    if (isRolling && !wasRollingRef.current) {
+      wasRollingRef.current = true;
+      spinTurnsRef.current += 2; // +720deg forward tumble
+      setRot(spinTurnsRef.current * 360);
+    } else if (!isRolling && wasRollingRef.current) {
+      wasRollingRef.current = false;
+    }
+  }, [isRolling]);
+
   const bgStyles = {
     violet: 'bg-gradient-to-br from-midnight-800 to-purple-950/70 border-purple-500/40 shadow-[0_8px_25px_-5px_rgba(139,92,246,0.3)]',
     cyan: 'bg-gradient-to-br from-midnight-800 to-cyan-950/70 border-cyan-500/40 shadow-[0_8px_25px_-5px_rgba(6,182,212,0.3)]',
@@ -84,25 +98,15 @@ export const SingleDie: React.FC<SingleDieProps> = ({ value, isRolling, color = 
 
   return (
     <motion.div
-      animate={
-        isRolling
-          ? {
-              rotateX: [0, 720, 1080],
-              rotateY: [0, -720, -1080],
-              rotateZ: [0, 360, 720],
-              y: [0, -60, 0],
-              scale: [1, 1.15, 1],
-            }
-          : {
-              rotateX: 0,
-              rotateY: 0,
-              rotateZ: 0,
-              y: 0,
-              scale: 1,
-            }
-      }
-      transition={{ duration: 0.9, ease: [0.25, 1, 0.5, 1] }}
-      className={`w-20 h-20 rounded-2xl border-2 flex items-center justify-center p-1 relative select-none ${bgStyles}`}
+      animate={{
+        rotateX: rot,
+        rotateY: -rot,
+        rotateZ: rot / 2,
+        y: isRolling ? -24 : 0,
+        scale: isRolling ? 1.12 : 1,
+      }}
+      transition={{ duration: isRolling ? 0.58 : 0.2, ease: [0.22, 1, 0.36, 1] }}
+      className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-2 flex items-center justify-center p-1 relative select-none ${bgStyles}`}
     >
       <div className="w-full h-full rounded-xl bg-midnight-900/40 border border-white/5 flex items-center justify-center">
         {renderPips(value, pipColor)}
@@ -114,16 +118,25 @@ export const SingleDie: React.FC<SingleDieProps> = ({ value, isRolling, color = 
 interface DiceVisualProps {
   diceValues: number[];
   isRolling: boolean;
+  onStageClick?: () => void;
 }
 
-export const DiceVisual: React.FC<DiceVisualProps> = ({ diceValues, isRolling }) => {
+export const DiceVisual: React.FC<DiceVisualProps> = ({ diceValues, isRolling, onStageClick }) => {
   const sum = diceValues.reduce((a, b) => a + b, 0);
   const colors: ('violet' | 'cyan' | 'rose')[] = ['violet', 'cyan', 'rose'];
 
   return (
-    <div className="flex flex-col items-center justify-center p-6">
+    <div className="flex flex-col items-center justify-center py-2 px-3 sm:p-5">
       {/* Dice group */}
-      <div className="flex items-center space-x-6 min-h-[110px]">
+      <button
+        type="button"
+        onClick={onStageClick}
+        disabled={!onStageClick || isRolling}
+        aria-label="Roll dice visual stage"
+        className={`flex flex-wrap items-center justify-center gap-3.5 sm:gap-6 min-h-[86px] sm:min-h-[110px] rounded-2xl px-2 transition-transform ${
+          onStageClick && !isRolling ? 'cursor-pointer hover:scale-[1.03] active:scale-95' : 'cursor-default'
+        }`}
+      >
         {diceValues.map((val, idx) => (
           <SingleDie
             key={idx}
@@ -132,24 +145,27 @@ export const DiceVisual: React.FC<DiceVisualProps> = ({ diceValues, isRolling })
             color={colors[idx % colors.length]}
           />
         ))}
-      </div>
+      </button>
 
       {/* Sum & Roll Result Badge */}
-      <div className="mt-5 flex items-center space-x-3">
-        <div className="px-4 py-1.5 rounded-full bg-midnight-800/90 border border-white/10 flex items-center space-x-2 text-xs font-mono">
+      <div className="mt-3 sm:mt-5 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+        <div className="px-3.5 py-1.5 rounded-full bg-midnight-800/90 border border-white/10 flex items-center space-x-2 text-[11px] sm:text-xs font-mono">
           <span className="text-slate-400">Roll:</span>
           <span className="text-white font-bold tracking-wider">
-            [{diceValues.join(', ')}]
+            {isRolling ? '[...]' : `[${diceValues.join(', ')}]`}
           </span>
         </div>
 
         {diceValues.length > 1 && (
-          <div className="px-4 py-1.5 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center space-x-2 text-xs font-mono">
+          <div className="px-3.5 py-1.5 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center space-x-2 text-[11px] sm:text-xs font-mono">
             <span className="text-purple-300">Sum:</span>
-            <span className="text-purple-200 font-extrabold text-sm">{sum}</span>
+            <span className="text-purple-200 font-extrabold text-xs sm:text-sm">
+              {isRolling ? '—' : sum}
+            </span>
           </div>
         )}
       </div>
     </div>
   );
 };
+

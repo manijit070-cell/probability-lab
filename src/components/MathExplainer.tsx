@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MathExplanation } from '../types';
 import { BookOpen, ChevronDown, ChevronUp, Sparkles, HelpCircle } from 'lucide-react';
 import katex from 'katex';
+import { soundEngine } from '../utils/sound';
 
 interface MathExplainerProps {
   explanation: MathExplanation;
@@ -41,28 +42,32 @@ export const MathExplainer: React.FC<MathExplainerProps> = ({ explanation }) => 
     <div className="glass-panel rounded-2xl border border-purple-500/20 overflow-hidden shadow-xl mt-6 transition-all duration-300">
       {/* Header Bar */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-purple-950/40 via-midnight-850 to-midnight-800 hover:from-purple-900/40 transition-colors text-left"
+        onClick={() => {
+          const next = !isOpen;
+          soundEngine.playToggle(next);
+          setIsOpen(next);
+        }}
+        className="w-full px-4 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between bg-gradient-to-r from-purple-950/40 via-midnight-850 to-midnight-800 hover:from-purple-900/40 transition-colors text-left"
       >
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
-            <BookOpen className="w-5 h-5" />
+          <div className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div>
-            <div className="flex items-center space-x-2">
-              <span className="text-xs uppercase tracking-wider font-mono text-purple-400 font-semibold">
+            <div className="flex flex-wrap items-center gap-1.5 sm:space-x-2">
+              <span className="text-[11px] sm:text-xs uppercase tracking-wider font-mono text-purple-400 font-semibold">
                 Rigorous Academic Theory
               </span>
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
                 KaTeX Math
               </span>
             </div>
-            <h3 className="text-lg font-semibold text-white">Understand the Mathematics</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-white">Understand the Mathematics</h3>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2 text-sm text-slate-400 hover:text-white">
-          <span>{isOpen ? 'Collapse Breakdown' : 'Expand Derivation'}</span>
+        <div className="flex items-center space-x-2 text-xs sm:text-sm text-slate-400 hover:text-white shrink-0 ml-2">
+          <span className="hidden sm:inline">{isOpen ? 'Collapse Breakdown' : 'Expand Derivation'}</span>
           {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
         </div>
       </button>
@@ -151,3 +156,4 @@ export const MathExplainer: React.FC<MathExplainerProps> = ({ explanation }) => 
     </div>
   );
 };
+

@@ -5,14 +5,13 @@ import { CoinVisual } from '../components/CoinVisual';
 import { StatCard } from '../components/StatCard';
 import { ConvergenceChart } from '../components/ConvergenceChart';
 import { MathExplainer } from '../components/MathExplainer';
+import { soundEngine } from '../utils/sound';
 import {
   Coins,
   Play,
   RotateCcw,
-  Sparkles,
   Sliders,
   BarChart3,
-  CheckCircle2,
   AlertCircle
 } from 'lucide-react';
 import {
@@ -44,10 +43,16 @@ export const CoinLab: React.FC = () => {
   // Preset trial buttons
   const trialPresets = [10, 100, 1000, 10000, 100000, 1000000];
 
-  const runSimulation = async () => {
+  const runSimulation = async (userInitiated = true) => {
     setLoading(true);
     setIsFlipping(true);
     setError(null);
+
+    if (userInitiated) {
+      soundEngine.playCoinFlip();
+    }
+
+    let settledOutcome: 'H' | 'T' = currentOutcome;
 
     try {
       const parsedSeed = seed.trim() !== '' ? parseInt(seed.trim(), 10) : undefined;
@@ -63,6 +68,7 @@ export const CoinLab: React.FC = () => {
       // Update sample flip animation
       if (res.sample_flips && res.sample_flips.length > 0) {
         const lastFlip = res.sample_flips[0][0] as 'H' | 'T';
+        settledOutcome = lastFlip;
         setCurrentOutcome(lastFlip);
       }
 
@@ -73,14 +79,27 @@ export const CoinLab: React.FC = () => {
       setTimeout(() => {
         setIsFlipping(false);
         setLoading(false);
-      }, 700);
+        if (userInitiated) {
+          soundEngine.playCoinLand(settledOutcome);
+        }
+      }, 650);
     }
   };
 
   // Initial simulation run on mount
   useEffect(() => {
-    runSimulation();
+    runSimulation(false);
   }, []);
+
+  const handleReset = () => {
+    soundEngine.playReset();
+    setNumTrials(1000);
+    setNumCoins(1);
+    setExperimentType('single_heads');
+    setTargetHeads(1);
+    setConsecutiveCount(2);
+    setSeed('');
+  };
 
   // Format heads distribution data for Recharts
   const headsDistributionChartData = result
@@ -92,15 +111,15 @@ export const CoinLab: React.FC = () => {
     : [];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 sm:space-y-10">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-white/10 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 sm:pb-6 border-b border-white/10 gap-3 sm:gap-4">
         <div>
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
               <Coins className="w-4 h-4" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">
               Coin Experiment Laboratory
             </h1>
           </div>
@@ -110,9 +129,9 @@ export const CoinLab: React.FC = () => {
         </div>
 
         <button
-          onClick={runSimulation}
+          onClick={() => runSimulation(true)}
           disabled={loading}
-          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-xs uppercase tracking-wider font-mono shadow-[0_0_20px_-3px_rgba(245,158,11,0.5)] transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+          className="hidden lg:flex px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-xs uppercase tracking-wider font-mono shadow-[0_0_20px_-3px_rgba(245,158,11,0.5)] transition-all items-center justify-center space-x-2 disabled:opacity-50 active:scale-95"
         >
           <Play className="w-4 h-4 fill-current" />
           <span>{loading ? 'Simulating in Python...' : 'Run Simulation'}</span>
@@ -126,16 +145,27 @@ export const CoinLab: React.FC = () => {
         </div>
       )}
 
-      {/* Main Controls & Visual Stage */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Interactive Controls */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="glass-panel p-6 rounded-2xl border border-white/10 space-y-5">
-            <div className="flex items-center space-x-2 border-b border-white/5 pb-3">
-              <Sliders className="w-4 h-4 text-amber-400" />
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-200 font-mono">
-                Experiment Configuration
-              </h2>
+      {/* Main Controls & Visual Stage (Visual Stage first on mobile for immediate interaction) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
+        {/* Left Column on Desktop / Second on Mobile: Interactive Controls */}
+        <div className="lg:col-span-5 order-2 lg:order-1 space-y-6">
+          <div className="glass-panel p-4 sm:p-6 rounded-2xl border border-white/10 space-y-5">
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <div className="flex items-center space-x-2">
+                <Sliders className="w-4 h-4 text-amber-400" />
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-200 font-mono">
+                  Experiment Configuration
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="text-[11px] font-mono text-slate-400 hover:text-amber-300 flex items-center space-x-1 transition-colors"
+                title="Reset parameters"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset</span>
+              </button>
             </div>
 
             {/* Experiment Scenario Selector */}
@@ -146,6 +176,7 @@ export const CoinLab: React.FC = () => {
               <select
                 value={experimentType}
                 onChange={(e) => {
+                  soundEngine.playClick();
                   const val = e.target.value;
                   setExperimentType(val);
                   if (val === 'single_heads' || val === 'single_tails') {
@@ -175,11 +206,12 @@ export const CoinLab: React.FC = () => {
                   max={8}
                   value={numCoins}
                   onChange={(e) => {
+                    soundEngine.playTick();
                     const k = parseInt(e.target.value, 10);
                     setNumCoins(k);
                     if (targetHeads > k) setTargetHeads(k);
                   }}
-                  className="w-full accent-amber-500"
+                  className="w-full accent-amber-500 text-amber-400 bg-midnight-900"
                 />
               </div>
             )}
@@ -196,8 +228,11 @@ export const CoinLab: React.FC = () => {
                   min={0}
                   max={numCoins}
                   value={targetHeads}
-                  onChange={(e) => setTargetHeads(parseInt(e.target.value, 10))}
-                  className="w-full accent-amber-500"
+                  onChange={(e) => {
+                    soundEngine.playTick();
+                    setTargetHeads(parseInt(e.target.value, 10));
+                  }}
+                  className="w-full accent-amber-500 text-amber-400 bg-midnight-900"
                 />
               </div>
             )}
@@ -214,8 +249,11 @@ export const CoinLab: React.FC = () => {
                   min={2}
                   max={Math.max(2, numCoins)}
                   value={consecutiveCount}
-                  onChange={(e) => setConsecutiveCount(parseInt(e.target.value, 10))}
-                  className="w-full accent-amber-500"
+                  onChange={(e) => {
+                    soundEngine.playTick();
+                    setConsecutiveCount(parseInt(e.target.value, 10));
+                  }}
+                  className="w-full accent-amber-500 text-amber-400 bg-midnight-900"
                 />
               </div>
             )}
@@ -231,8 +269,11 @@ export const CoinLab: React.FC = () => {
                   <button
                     key={preset}
                     type="button"
-                    onClick={() => setNumTrials(preset)}
-                    className={`py-1.5 rounded-lg text-xs font-mono transition-all border ${
+                    onClick={() => {
+                      soundEngine.playClick(1);
+                      setNumTrials(preset);
+                    }}
+                    className={`py-2 rounded-lg text-xs font-mono transition-all border active:scale-95 ${
                       numTrials === preset
                         ? 'bg-amber-500 text-slate-950 font-bold border-amber-400 shadow-sm'
                         : 'bg-midnight-900 text-slate-400 hover:text-white border-white/5'
@@ -277,19 +318,60 @@ export const CoinLab: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Visual Stage */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="glass-panel rounded-2xl border border-white/10 p-6 flex flex-col items-center justify-center relative overflow-hidden">
+        {/* Right Column on Desktop / First on Mobile: Visual Stage + Integrated Action Bar */}
+        <div className="lg:col-span-7 order-1 lg:order-2 space-y-4 sm:space-y-6">
+          <div className="glass-stage rounded-2xl border border-white/10 p-4 sm:p-6 flex flex-col items-center justify-center relative overflow-hidden">
+            <div className="w-full flex items-center justify-between text-[11px] font-mono text-slate-400 mb-1">
+              <span className="uppercase tracking-wider text-amber-300/90">
+                {experimentType.replace(/_/g, ' ')}
+              </span>
+              <span>N = {numTrials.toLocaleString()}</span>
+            </div>
+
             <CoinVisual
               currentOutcome={currentOutcome}
               isFlipping={isFlipping}
               extraFlips={result?.sample_flips?.[0]}
+              onStageClick={() => runSimulation(true)}
             />
+
+            {/* Integrated Action Bar — keeps Run button directly beneath animation on mobile */}
+            <div className="w-full pt-3 mt-2 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+              <div className="flex items-center justify-center sm:justify-start gap-1.5 overflow-x-auto no-scrollbar">
+                {[100, 1000, 10000, 100000].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => {
+                      soundEngine.playClick(1);
+                      setNumTrials(preset);
+                    }}
+                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-mono transition-all border active:scale-95 shrink-0 ${
+                      numTrials === preset
+                        ? 'bg-amber-500/20 text-amber-300 font-bold border-amber-400/50'
+                        : 'bg-midnight-900/80 text-slate-400 hover:text-white border-white/5'
+                    }`}
+                  >
+                    {preset >= 1000 ? `${preset / 1000}k` : preset}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => runSimulation(true)}
+                disabled={loading}
+                className="px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-xs uppercase tracking-wider font-mono shadow-[0_0_22px_-3px_rgba(245,158,11,0.55)] transition-all flex items-center justify-center space-x-2 disabled:opacity-50 active:scale-[0.98]"
+              >
+                <Play className="w-4 h-4 fill-current" />
+                <span>{loading ? 'Flipping in Python...' : 'Flip Coin & Simulate'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Key Metric Cards */}
           {result && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
               <StatCard
                 label="Experimental P"
                 value={(result.experimental_probability * 100).toFixed(2) + '%'}
@@ -389,3 +471,4 @@ export const CoinLab: React.FC = () => {
     </div>
   );
 };
+

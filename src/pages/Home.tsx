@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TabType } from '../types';
+import { soundEngine } from '../utils/sound';
 import {
   Coins,
   Dice5,
@@ -20,8 +21,52 @@ interface HomeProps {
   setActiveTab: (tab: TabType) => void;
 }
 
+const HERO_CARDS = [
+  { rank: 'A', symbol: '♥', color: 'text-red-500', label: 'Ace of Hearts' },
+  { rank: 'K', symbol: '♠', color: 'text-slate-900', label: 'King of Spades' },
+  { rank: 'Q', symbol: '♦', color: 'text-red-500', label: 'Queen of Diamonds' },
+  { rank: 'J', symbol: '♣', color: 'text-slate-900', label: 'Jack of Clubs' },
+];
+
 export const Home: React.FC<HomeProps> = ({ setActiveTab }) => {
   const [heroFlipped, setHeroFlipped] = useState(false);
+  const [heroSpinKey, setHeroSpinKey] = useState(0);
+  const [heroDice, setHeroDice] = useState<[number, number]>([3, 4]);
+  const [heroDiceSpinKey, setHeroDiceSpinKey] = useState(0);
+  const [heroCardIdx, setHeroCardIdx] = useState(0);
+
+  const navigateWithSound = (tab: TabType) => {
+    soundEngine.playTabSwitch();
+    setActiveTab(tab);
+  };
+
+  const handleHeroCoinClick = () => {
+    soundEngine.playCoinFlip();
+    const next = !heroFlipped;
+    setHeroFlipped(next);
+    setHeroSpinKey((k) => k + 1);
+    setTimeout(() => {
+      soundEngine.playCoinLand(next ? 'T' : 'H');
+    }, 450);
+  };
+
+  const handleHeroDiceClick = () => {
+    soundEngine.playDiceRoll(2);
+    const d1 = Math.floor(Math.random() * 6) + 1;
+    const d2 = Math.floor(Math.random() * 6) + 1;
+    setHeroDice([d1, d2]);
+    setHeroDiceSpinKey((k) => k + 1);
+    setTimeout(() => {
+      soundEngine.playDiceLand();
+    }, 450);
+  };
+
+  const handleHeroCardClick = () => {
+    soundEngine.playCardDeal(1);
+    setHeroCardIdx((i) => (i + 1) % HERO_CARDS.length);
+  };
+
+  const heroCard = HERO_CARDS[heroCardIdx];
 
   const categories = [
     {
@@ -66,14 +111,14 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab }) => {
   ];
 
   return (
-    <div className="space-y-24">
+    <div className="space-y-14 sm:space-y-24">
       {/* Hero Section */}
-      <section className="relative pt-12 pb-16 overflow-hidden">
+      <section className="relative pt-4 sm:pt-12 pb-8 sm:pb-16 overflow-hidden">
         {/* Ambient background glows */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-purple-600/15 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute top-1/3 right-10 w-[400px] h-[250px] bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] sm:w-[600px] h-[250px] sm:h-[350px] bg-purple-600/15 blur-[110px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/3 right-4 sm:right-10 w-[240px] sm:w-[400px] h-[200px] sm:h-[250px] bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none" />
 
-        <div className="relative max-w-5xl mx-auto text-center space-y-8 px-4">
+        <div className="relative max-w-5xl mx-auto text-center space-y-5 sm:space-y-8 px-1 sm:px-4">
           {/* Scientific Badge */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -112,19 +157,19 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-2 sm:pt-4"
           >
             <button
-              onClick={() => setActiveTab('coin')}
-              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-medium text-sm shadow-[0_0_30px_-5px_rgba(147,51,234,0.5)] transition-all flex items-center justify-center space-x-2 group border border-purple-400/40"
+              onClick={() => navigateWithSound('coin')}
+              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-medium text-sm shadow-[0_0_30px_-5px_rgba(147,51,234,0.5)] transition-all flex items-center justify-center space-x-2 group border border-purple-400/40 active:scale-[0.98]"
             >
               <span>Start Experimenting</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </button>
 
             <button
-              onClick={() => setActiveTab('statistics')}
-              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-midnight-900/90 hover:bg-midnight-800 text-slate-200 font-medium text-sm border border-white/10 hover:border-white/20 transition-all flex items-center justify-center space-x-2"
+              onClick={() => navigateWithSound('statistics')}
+              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-midnight-900/90 hover:bg-midnight-800 text-slate-200 font-medium text-sm border border-white/10 hover:border-white/20 transition-all flex items-center justify-center space-x-2 active:scale-[0.98]"
             >
               <Activity className="w-4 h-4 text-cyan-400" />
               <span>Explore Law of Large Numbers</span>
@@ -136,50 +181,89 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab }) => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="pt-8"
+            className="pt-4 sm:pt-8"
           >
-            <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10 shadow-2xl max-w-3xl mx-auto relative overflow-hidden">
-              <div className="flex flex-wrap items-center justify-around gap-6">
-                {/* Coin Badge */}
-                <div
-                  onClick={() => setHeroFlipped(!heroFlipped)}
-                  className="flex flex-col items-center cursor-pointer group"
+            <div className="glass-stage p-5 sm:p-8 rounded-3xl border border-white/10 shadow-2xl max-w-3xl mx-auto relative overflow-hidden">
+              <div className="grid grid-cols-3 gap-3 sm:gap-6 items-start">
+                {/* Interactive Coin Badge */}
+                <button
+                  type="button"
+                  onClick={handleHeroCoinClick}
+                  className="flex flex-col items-center cursor-pointer group active:scale-95 transition-transform"
                 >
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-600 to-yellow-300 p-1 shadow-lg group-hover:scale-105 transition-transform flex items-center justify-center text-amber-950 font-black text-2xl">
+                  <motion.div
+                    key={heroSpinKey}
+                    initial={heroSpinKey > 0 ? { rotateY: 0, scale: 1 } : false}
+                    animate={{ rotateY: heroSpinKey > 0 ? 720 : 0, scale: [1, 1.12, 1] }}
+                    transition={{ duration: 0.55, ease: 'easeOut' }}
+                    className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full p-1 shadow-lg group-hover:scale-105 transition-transform flex items-center justify-center font-black text-xl sm:text-2xl ${
+                      heroFlipped
+                        ? 'bg-gradient-to-tr from-slate-400 to-slate-100 text-slate-900'
+                        : 'bg-gradient-to-tr from-amber-600 to-yellow-300 text-amber-950'
+                    }`}
+                  >
                     {heroFlipped ? 'T' : 'H'}
-                  </div>
-                  <span className="text-xs font-mono text-slate-400 mt-2">Click to flip</span>
-                  <span className="text-xs font-mono font-bold text-amber-400">P(H) = 0.5000</span>
-                </div>
+                  </motion.div>
+                  <span className="text-[11px] sm:text-xs font-mono text-slate-400 mt-2">Tap to flip</span>
+                  <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-400">
+                    P(H) = 0.50
+                  </span>
+                </button>
 
-                {/* Dice Badge */}
-                <div className="flex flex-col items-center">
-                  <div className="flex space-x-2">
-                    <div className="w-12 h-12 rounded-xl bg-purple-900/60 border border-purple-400/40 flex items-center justify-center text-purple-200 font-mono font-bold text-xl shadow-lg">
-                      3
+                {/* Interactive Dice Badge */}
+                <button
+                  type="button"
+                  onClick={handleHeroDiceClick}
+                  className="flex flex-col items-center cursor-pointer group active:scale-95 transition-transform"
+                >
+                  <motion.div
+                    key={heroDiceSpinKey}
+                    initial={heroDiceSpinKey > 0 ? { rotateZ: -12, scale: 0.92 } : false}
+                    animate={{ rotateZ: 0, scale: 1 }}
+                    transition={{ duration: 0.35, ease: 'easeOut' }}
+                    className="flex space-x-1.5 sm:space-x-2 min-h-[64px] sm:min-h-[80px] items-center"
+                  >
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-purple-900/60 border border-purple-400/40 flex items-center justify-center text-purple-200 font-mono font-bold text-base sm:text-xl shadow-lg group-hover:border-purple-300/70">
+                      {heroDice[0]}
                     </div>
-                    <div className="w-12 h-12 rounded-xl bg-cyan-900/60 border border-cyan-400/40 flex items-center justify-center text-cyan-200 font-mono font-bold text-xl shadow-lg">
-                      4
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-cyan-900/60 border border-cyan-400/40 flex items-center justify-center text-cyan-200 font-mono font-bold text-base sm:text-xl shadow-lg group-hover:border-cyan-300/70">
+                      {heroDice[1]}
                     </div>
-                  </div>
-                  <span className="text-xs font-mono text-slate-400 mt-2">Sum = 7 (Apex)</span>
-                  <span className="text-xs font-mono font-bold text-cyan-400">P(S=7) = 1/6 (16.67%)</span>
-                </div>
+                  </motion.div>
+                  <span className="text-[11px] sm:text-xs font-mono text-slate-400 mt-2">
+                    Sum = {heroDice[0] + heroDice[1]}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-mono font-bold text-cyan-400">
+                    Tap to roll
+                  </span>
+                </button>
 
-                {/* Card Badge */}
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-20 rounded-xl bg-slate-100 border border-slate-300 p-2 shadow-lg flex flex-col justify-between items-center text-red-600">
-                    <span className="text-xs font-bold font-mono self-start">A</span>
-                    <span className="text-2xl leading-none">♥</span>
-                    <span className="text-xs font-bold font-mono self-end">A</span>
-                  </div>
-                  <span className="text-xs font-mono text-slate-400 mt-2">Single Draw</span>
-                  <span className="text-xs font-mono font-bold text-rose-400">P(Ace) = 4/52 (7.69%)</span>
-                </div>
+                {/* Interactive Card Badge */}
+                <button
+                  type="button"
+                  onClick={handleHeroCardClick}
+                  className="flex flex-col items-center cursor-pointer group active:scale-95 transition-transform"
+                >
+                  <motion.div
+                    key={heroCardIdx}
+                    initial={heroCardIdx > 0 ? { y: -10, rotateY: 90 } : false}
+                    animate={{ y: 0, rotateY: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className={`w-12 h-16 sm:w-16 sm:h-20 rounded-xl bg-slate-100 border border-slate-300 p-1.5 sm:p-2 shadow-lg flex flex-col justify-between items-center group-hover:scale-105 transition-transform ${heroCard.color}`}
+                  >
+                    <span className="text-[10px] sm:text-xs font-bold font-mono self-start">{heroCard.rank}</span>
+                    <span className="text-lg sm:text-2xl leading-none">{heroCard.symbol}</span>
+                    <span className="text-[10px] sm:text-xs font-bold font-mono self-end">{heroCard.rank}</span>
+                  </motion.div>
+                  <span className="text-[11px] sm:text-xs font-mono text-slate-400 mt-2">Tap to draw</span>
+                  <span className="text-[10px] sm:text-xs font-mono font-bold text-rose-400">
+                    P(Ace) = 4/52
+                  </span>
+                </button>
               </div>
 
               {/* Formula Footer */}
-              <div className="mt-6 pt-4 border-t border-white/5 flex flex-wrap items-center justify-between text-xs font-mono text-slate-400">
+              <div className="mt-5 sm:mt-6 pt-3.5 sm:pt-4 border-t border-white/5 flex flex-wrap items-center justify-center sm:justify-between gap-2 text-[11px] sm:text-xs font-mono text-slate-400">
                 <span className="text-purple-300">Stochastic Simulation: Real Python Engine</span>
                 <span className="text-cyan-300">Law of Large Numbers: N → ∞</span>
               </div>
@@ -231,8 +315,8 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab }) => {
 
                 <div className="pt-6 mt-6 border-t border-white/5">
                   <button
-                    onClick={() => setActiveTab(cat.id)}
-                    className="w-full py-2.5 px-4 rounded-xl bg-midnight-800 hover:bg-purple-600/30 text-white text-xs font-semibold font-mono border border-white/10 hover:border-purple-400/40 transition-all flex items-center justify-center space-x-2"
+                    onClick={() => navigateWithSound(cat.id)}
+                    className="w-full py-2.5 px-4 rounded-xl bg-midnight-800 hover:bg-purple-600/30 text-white text-xs font-semibold font-mono border border-white/10 hover:border-purple-400/40 transition-all flex items-center justify-center space-x-2 active:scale-[0.98]"
                   >
                     <span>Launch {cat.title}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -333,8 +417,8 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab }) => {
           </div>
 
           <button
-            onClick={() => setActiveTab('statistics')}
-            className="px-6 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-midnight-950 font-bold text-sm shadow-[0_0_20px_-3px_rgba(6,182,212,0.5)] transition-all flex items-center space-x-2 flex-shrink-0"
+            onClick={() => navigateWithSound('statistics')}
+            className="w-full md:w-auto px-6 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-midnight-950 font-bold text-sm shadow-[0_0_20px_-3px_rgba(6,182,212,0.5)] transition-all flex items-center justify-center space-x-2 flex-shrink-0 active:scale-[0.98]"
           >
             <span>Launch LLN Studio</span>
             <ArrowRight className="w-4 h-4" />
@@ -344,3 +428,4 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab }) => {
     </div>
   );
 };
+

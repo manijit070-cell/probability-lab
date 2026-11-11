@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { probabilityApi } from '../services/api';
-import { LLNAnalysisResponse, LLNScalePoint } from '../types';
+import { LLNAnalysisResponse } from '../types';
+import { soundEngine } from '../utils/sound';
 import { StatCard } from '../components/StatCard';
 import {
   BarChart3,
@@ -32,9 +33,13 @@ export const StatisticsLab: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<LLNAnalysisResponse | null>(null);
 
-  const runLLNAnalysis = async (selectedDomain: 'coin' | 'dice' | 'card') => {
+  const runLLNAnalysis = async (selectedDomain: 'coin' | 'dice' | 'card', userInitiated = false) => {
     setLoading(true);
     setError(null);
+
+    if (userInitiated) {
+      soundEngine.playClick(2);
+    }
 
     try {
       const res = await probabilityApi.analyzeLLN({
@@ -42,6 +47,9 @@ export const StatisticsLab: React.FC = () => {
         scenario: 'default',
       });
       setAnalysis(res);
+      if (userInitiated) {
+        soundEngine.playSuccess();
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to execute multi-scale LLN analysis.');
     } finally {
@@ -50,8 +58,8 @@ export const StatisticsLab: React.FC = () => {
   };
 
   useEffect(() => {
-    runLLNAnalysis(domain);
-  }, [domain]);
+    runLLNAnalysis(domain, false);
+  }, []);
 
   const renderLatex = (latex: string) => {
     try {
@@ -80,15 +88,15 @@ export const StatisticsLab: React.FC = () => {
     : [];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 sm:space-y-10">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-white/10 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 sm:pb-6 border-b border-white/10 gap-3 sm:gap-4">
         <div>
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center shrink-0">
               <BarChart3 className="w-4 h-4" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">
               Statistics & Law of Large Numbers (LLN) Studio
             </h1>
           </div>
@@ -98,9 +106,9 @@ export const StatisticsLab: React.FC = () => {
         </div>
 
         <button
-          onClick={() => runLLNAnalysis(domain)}
+          onClick={() => runLLNAnalysis(domain, true)}
           disabled={loading}
-          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold text-xs uppercase tracking-wider font-mono shadow-[0_0_20px_-3px_rgba(6,182,212,0.5)] transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+          className="w-full md:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold text-xs uppercase tracking-wider font-mono shadow-[0_0_20px_-3px_rgba(6,182,212,0.5)] transition-all flex items-center justify-center space-x-2 disabled:opacity-50 active:scale-[0.98]"
         >
           <Play className="w-4 h-4 fill-current" />
           <span>{loading ? 'Analyzing in Python...' : 'Re-Run Multi-Scale LLN'}</span>
@@ -115,13 +123,13 @@ export const StatisticsLab: React.FC = () => {
       )}
 
       {/* Domain Selector */}
-      <div className="glass-panel p-4 rounded-2xl border border-white/10 flex flex-wrap items-center justify-between gap-4">
+      <div className="glass-panel p-4 rounded-2xl border border-white/10 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center space-x-2 text-xs font-mono text-slate-300">
-          <Zap className="w-4 h-4 text-cyan-400" />
+          <Zap className="w-4 h-4 text-cyan-400 shrink-0" />
           <span>Select Experiment Domain to Benchmark:</span>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:flex items-center gap-2">
           {[
             { id: 'coin' as const, label: 'Coin Flip (P=0.5000)' },
             { id: 'dice' as const, label: 'Dice Sum of 7 (P=0.1667)' },
@@ -129,8 +137,11 @@ export const StatisticsLab: React.FC = () => {
           ].map((d) => (
             <button
               key={d.id}
-              onClick={() => setDomain(d.id)}
-              className={`px-4 py-2 rounded-xl text-xs font-mono transition-all border ${
+              onClick={() => {
+                setDomain(d.id);
+                runLLNAnalysis(d.id, true);
+              }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-mono transition-all border active:scale-95 text-center ${
                 domain === d.id
                   ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-sm'
                   : 'bg-midnight-900 text-slate-400 hover:text-white border-white/5'
@@ -314,7 +325,7 @@ export const StatisticsLab: React.FC = () => {
             <span className="font-bold text-purple-300 block mb-1">
               Critical Academic Distinction: Gambler's Fallacy vs. Law of Averages
             </span>
-            The Law of Large Numbers does <strong>NOT</strong> state that future trials will compensate for past imbalances (e.g., getting 5 Heads in a row does not make Tails more likely on the 6th flip). Each flip remains strictly independent ($P=0.5$). The convergence occurs solely through <em>dilution</em>: the denominator $n$ grows much faster than finite numerator fluctuations.
+            The Law of Large Numbers does <strong>NOT</strong> state that future trials will compensate for past imbalances (e.g., getting 5 Heads in a row does not make Tails more likely on the 6th flip). Each flip remains strictly independent (<code className="font-mono text-purple-300">P = 0.5</code>). The convergence occurs solely through <em>dilution</em>: the denominator <code className="font-mono text-purple-300">n</code> grows much faster than finite numerator fluctuations.
           </div>
         </div>
       </div>

@@ -54,28 +54,28 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <div
-      className={`glass-card rounded-xl p-5 border border-white/5 relative overflow-hidden transition-all duration-300 ${accentClasses.border} ${accentClasses.glow}`}
+      className={`glass-card rounded-xl p-3.5 sm:p-5 border border-white/5 relative overflow-hidden transition-all duration-300 ${accentClasses.border} ${accentClasses.glow}`}
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <span className="text-xs uppercase font-mono tracking-wider text-slate-400 block mb-1">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <span className="text-[11px] sm:text-xs uppercase font-mono tracking-wider text-slate-400 block mb-0.5 sm:mb-1 truncate">
             {label}
           </span>
-          <div className="text-2xl font-bold font-mono tracking-tight text-white">
+          <div className="text-lg sm:text-2xl font-bold font-mono tracking-tight text-white truncate">
             {value}
           </div>
         </div>
 
         {Icon && (
-          <div className={`w-9 h-9 rounded-lg border flex items-center justify-center ${accentClasses.iconBg}`}>
-            <Icon className="w-4 h-4" />
+          <div className={`w-7 h-7 sm:w-9 sm:h-9 shrink-0 rounded-lg border flex items-center justify-center ${accentClasses.iconBg}`}>
+            <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
         )}
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-xs">
+      <div className="mt-2 sm:mt-3 flex flex-wrap items-center justify-between gap-1.5 text-[11px] sm:text-xs">
         {subValue && (
-          <span className="text-slate-400 font-mono">
+          <span className="text-slate-400 font-mono truncate">
             {subValue}
           </span>
         )}
@@ -88,3 +88,4 @@ export const StatCard: React.FC<StatCardProps> = ({
     </div>
   );
 };
+
